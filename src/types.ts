@@ -61,5 +61,10 @@ export interface NegotiationRecommendation {
   targetHigh: number;
   maximum: number;
   step: number;
+  estimatedMarketValue?: number;
+  openingWage?: number;
+  targetWageLow?: number;
+  targetWageHigh?: number;
+  confidence?: "low" | "medium" | "high";
   notes: string[];
 }
