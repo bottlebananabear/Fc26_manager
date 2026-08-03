@@ -8,6 +8,7 @@
     "fc26-manager": "./dist/cli.js"
   },
   "scripts": {
+    "setup-data": "node scripts/setup-data.mjs",
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
