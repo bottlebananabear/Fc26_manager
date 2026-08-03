@@ -17,10 +17,11 @@ The parser uses the known hashed FC 26 fields and table names. EA's field codes 
 
 ```bash
 npm install
+npm run setup-data
 npm run build
 ```
 
-The complete name map is intentionally not committed in the first scaffold. Copy `global_names.json` into `data/` before running squad scans. The team, nation and field mappings are included.
+`setup-data` downloads the large player-name, team and nation mappings used by the save decoder. They are kept out of the repository so the project remains small.
 
 ## Scan a save
 
@@ -62,7 +63,7 @@ The output separates the aggressive opening, likely settlement range, step size 
 
 ## Development plan
 
-1. Complete the bundled player-name mapping and add parser fixtures.
+1. Add parser fixtures and save-regression tests.
 2. Add squad-role analysis: best XI, depth, positional weaknesses and development minutes.
 3. Add target comparison against the current squad.
 4. Read shortlist and asking-price data from the `gllz` table.
