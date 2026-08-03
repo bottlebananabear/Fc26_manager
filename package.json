@@ -1,0 +1,26 @@
+{
+  "name": "fc26-manager",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local FC 26 career save scanner and squad/transfer analysis CLI.",
+  "bin": {
+    "fc26-manager": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "check": "tsc -p tsconfig.json --noEmit && vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
