@@ -153,26 +153,32 @@ function formatMoney(value: number | undefined): string {
 }
 
 function runNegotiation(side: "buy" | "sell", args: string[]): void {
+  const marketValue = optionalNumber(args, "--value");
+  const contractYears = optionalNumber(args, "--contract-years");
+  const currentWage = optionalNumber(args, "--wage");
+  const strength = sellerStrength(args);
+  const releaseClause = optionalNumber(args, "--release-clause");
+  const budget = optionalNumber(args, "--budget");
   const common = {
-    marketValue: optionalNumber(args, "--value"),
     age: requiredNumber(args, "--age"),
     overall: requiredNumber(args, "--ovr"),
     potential: requiredNumber(args, "--pot"),
-    contractYears: optionalNumber(args, "--contract-years"),
+    ...(marketValue !== undefined ? { marketValue } : {}),
+    ...(contractYears !== undefined ? { contractYears } : {}),
   };
 
   const recommendation =
     side === "buy"
       ? recommendBuy({
           ...common,
-          currentWage: optionalNumber(args, "--wage"),
+          ...(currentWage !== undefined ? { currentWage } : {}),
           transferListed: hasFlag(args, "--listed"),
           unwillingToSell: hasFlag(args, "--unwilling"),
           starterQuality: hasFlag(args, "--starter"),
-          sellerStrength: sellerStrength(args),
+          ...(strength !== undefined ? { sellerStrength: strength } : {}),
           rivalry: hasFlag(args, "--rival"),
-          releaseClause: optionalNumber(args, "--release-clause"),
-          budget: optionalNumber(args, "--budget"),
+          ...(releaseClause !== undefined ? { releaseClause } : {}),
+          ...(budget !== undefined ? { budget } : {}),
         })
       : recommendSell({
           ...common,
@@ -204,7 +210,7 @@ async function main(): Promise<void> {
 
   if (command === "scan" || command === "watch") {
     const hasPath = first !== undefined && !first.startsWith("--");
-    const inputPath = hasPath ? first : defaultSaveFolder();
+    const inputPath = hasPath && first !== undefined ? first : defaultSaveFolder();
     const args = hasPath ? rest : [first, ...rest].filter((value): value is string => value !== undefined);
     if (command === "scan") await runScan(inputPath, args);
     else await runWatch(inputPath, args);
