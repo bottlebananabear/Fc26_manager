@@ -3,25 +3,34 @@ import { watch } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { recommendBuy, recommendSell } from "./analysis/negotiation.js";
+import { recommendBuy, recommendSell, type ClubStrength } from "./analysis/negotiation.js";
 import { buildCareerSnapshot } from "./fc26/snapshot.js";
 
 function usage(): never {
   console.log(`fc26-manager
 
 Commands:
-  scan <save-or-folder> [--team <id>] [--json] [--rating-offset 0|1]
-  watch <save-folder> [--team <id>] [--rating-offset 0|1]
-  negotiate buy  --value <amount> --age <n> --ovr <n> --pot <n> [options]
-  negotiate sell --value <amount> --age <n> --ovr <n> --pot <n> [options]
+  scan [save-or-folder] [--team <id>] [--json] [--rating-offset 0|1]
+  watch [save-folder] [--team <id>] [--rating-offset 0|1]
+  negotiate buy  --age <n> --ovr <n> --pot <n> [--value <amount>] [options]
+  negotiate sell --age <n> --ovr <n> --pot <n> [--value <amount>] [options]
 
 Negotiation options:
+  --value <amount>             Scouted market value; modelled when omitted
+  --wage <amount>              Current weekly wage
   --contract-years <n>
+  --seller-strength weak|normal|strong|elite
   --budget <amount>
+  --release-clause <amount>
   --listed
+  --unwilling
   --starter
+  --rival
   --important
   --rich-buyer
+
+The default Windows save folder is %LOCALAPPDATA%\\EA SPORTS FC 26\\settings.
+Set FC26_SAVES to override it.
 `);
   process.exit(1);
 }
@@ -35,11 +44,26 @@ function hasFlag(args: string[], name: string): boolean {
   return args.includes(name);
 }
 
-function requiredNumber(args: string[], name: string): number {
+function optionalNumber(args: string[], name: string): number | undefined {
   const raw = getFlag(args, name);
-  const value = raw ? Number(raw) : Number.NaN;
-  if (!Number.isFinite(value)) throw new Error(`Missing or invalid ${name}`);
+  if (raw === undefined) return undefined;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) throw new Error(`Invalid ${name}: ${raw}`);
   return value;
+}
+
+function requiredNumber(args: string[], name: string): number {
+  const value = optionalNumber(args, name);
+  if (value === undefined) throw new Error(`Missing ${name}`);
+  return value;
+}
+
+function defaultSaveFolder(): string {
+  if (process.env.FC26_SAVES) return process.env.FC26_SAVES;
+  if (process.env.LOCALAPPDATA) {
+    return path.join(process.env.LOCALAPPDATA, "EA SPORTS FC 26", "settings");
+  }
+  throw new Error("No save path supplied and FC26_SAVES/LOCALAPPDATA is unavailable.");
 }
 
 async function latestSave(inputPath: string): Promise<string> {
@@ -64,11 +88,15 @@ async function latestSave(inputPath: string): Promise<string> {
 
 async function runScan(inputPath: string, args: string[]): Promise<void> {
   const savePath = await latestSave(inputPath);
-  const teamIdRaw = getFlag(args, "--team");
+  const teamId = optionalNumber(args, "--team");
   const offsetRaw = getFlag(args, "--rating-offset");
+  if (offsetRaw !== undefined && offsetRaw !== "0" && offsetRaw !== "1") {
+    throw new Error(`Invalid --rating-offset: ${offsetRaw}`);
+  }
+  const ratingOffset = offsetRaw === "0" ? 0 : 1;
   const snapshot = await buildCareerSnapshot(savePath, {
-    ...(teamIdRaw ? { teamId: Number(teamIdRaw) } : {}),
-    ...(offsetRaw === "0" || offsetRaw === "1" ? { ratingOffset: Number(offsetRaw) as 0 | 1 } : {}),
+    ...(teamId !== undefined ? { teamId } : {}),
+    ratingOffset,
   });
 
   if (hasFlag(args, "--json")) {
@@ -108,24 +136,49 @@ async function runWatch(inputPath: string, args: string[]): Promise<void> {
   console.log(`Watching ${inputPath} for updated FC 26 career saves...`);
 }
 
+function sellerStrength(args: string[]): ClubStrength | undefined {
+  const value = getFlag(args, "--seller-strength");
+  if (value === undefined) return undefined;
+  if (["weak", "normal", "strong", "elite"].includes(value)) return value as ClubStrength;
+  throw new Error(`Invalid --seller-strength: ${value}`);
+}
+
+function formatMoney(value: number | undefined): string {
+  if (value === undefined) return "-";
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 function runNegotiation(side: "buy" | "sell", args: string[]): void {
+  const marketValue = optionalNumber(args, "--value");
+  const contractYears = optionalNumber(args, "--contract-years");
+  const currentWage = optionalNumber(args, "--wage");
+  const strength = sellerStrength(args);
+  const releaseClause = optionalNumber(args, "--release-clause");
+  const budget = optionalNumber(args, "--budget");
   const common = {
-    marketValue: requiredNumber(args, "--value"),
     age: requiredNumber(args, "--age"),
     overall: requiredNumber(args, "--ovr"),
     potential: requiredNumber(args, "--pot"),
-    ...(getFlag(args, "--contract-years")
-      ? { contractYears: requiredNumber(args, "--contract-years") }
-      : {}),
+    ...(marketValue !== undefined ? { marketValue } : {}),
+    ...(contractYears !== undefined ? { contractYears } : {}),
   };
 
   const recommendation =
     side === "buy"
       ? recommendBuy({
           ...common,
+          ...(currentWage !== undefined ? { currentWage } : {}),
           transferListed: hasFlag(args, "--listed"),
+          unwillingToSell: hasFlag(args, "--unwilling"),
           starterQuality: hasFlag(args, "--starter"),
-          ...(getFlag(args, "--budget") ? { budget: requiredNumber(args, "--budget") } : {}),
+          ...(strength !== undefined ? { sellerStrength: strength } : {}),
+          rivalry: hasFlag(args, "--rival"),
+          ...(releaseClause !== undefined ? { releaseClause } : {}),
+          ...(budget !== undefined ? { budget } : {}),
         })
       : recommendSell({
           ...common,
@@ -134,11 +187,19 @@ function runNegotiation(side: "buy" | "sell", args: string[]): void {
         });
 
   console.table({
-    opening: recommendation.opening,
-    targetLow: recommendation.targetLow,
-    targetHigh: recommendation.targetHigh,
-    [side === "buy" ? "walkAway" : "minimum"]: recommendation.maximum,
-    step: recommendation.step,
+    estimatedValue: formatMoney(recommendation.estimatedMarketValue),
+    opening: formatMoney(recommendation.opening),
+    targetLow: formatMoney(recommendation.targetLow),
+    targetHigh: formatMoney(recommendation.targetHigh),
+    [side === "buy" ? "walkAway" : "minimum"]: formatMoney(recommendation.maximum),
+    step: formatMoney(recommendation.step),
+    ...(side === "buy"
+      ? {
+          openingWage: `${formatMoney(recommendation.openingWage)}/week`,
+          targetWage: `${formatMoney(recommendation.targetWageLow)}–${formatMoney(recommendation.targetWageHigh)}/week`,
+          confidence: recommendation.confidence ?? "-",
+        }
+      : {}),
   });
   for (const note of recommendation.notes) console.log(`- ${note}`);
 }
@@ -147,13 +208,12 @@ async function main(): Promise<void> {
   const [command, first, ...rest] = process.argv.slice(2);
   if (!command) usage();
 
-  if (command === "scan" && first) {
-    await runScan(first, rest);
-    return;
-  }
-
-  if (command === "watch" && first) {
-    await runWatch(first, rest);
+  if (command === "scan" || command === "watch") {
+    const hasPath = first !== undefined && !first.startsWith("--");
+    const inputPath = hasPath && first !== undefined ? first : defaultSaveFolder();
+    const args = hasPath ? rest : [first, ...rest].filter((value): value is string => value !== undefined);
+    if (command === "scan") await runScan(inputPath, args);
+    else await runWatch(inputPath, args);
     return;
   }
 
