@@ -7,7 +7,7 @@ Empirical notes from the Wolves career save. These are observations from actual 
 - The game's **recommended wage is a useful acceptance-band anchor**, but not a target that must be paid.
 - Very large wage lowballs can be treated as an insult and end talks immediately.
 - **Signing bonuses and appearance/clean-sheet bonuses are much softer than base wage** and can often be cut aggressively.
-- Base wage appears comparatively sticky once the agent has stated a demand.
+- Base wage appears comparatively sticky once the agent has stated a demand, but low-tension negotiations can still support further wage shaving after a counter.
 - If tension remains low, continue shaving small amounts from wage and/or bonus rather than accepting the first viable counter.
 - Internal squad wage structure and intended squad role should determine the walk-away point.
 - A free agent being clubless should not be assumed to create a huge wage discount; the game may not model this strongly enough to justify extreme lowballs.
@@ -59,18 +59,21 @@ Observation: after an acceptable-band counter, FC 26 can still tolerate small fo
 
 Observation: the agent held firm on base wage but allowed an enormous reduction in guaranteed/conditional bonuses. Treat incentive demands as highly negotiable and do not assume the total value of the agent counter is equally sticky across components.
 
-### Sinaly Diomandé — free agent, negotiation in progress
+### Sinaly Diomandé — free agent
 
 - Intended role: Sporadic CB depth.
 - Agreed term: 3 years.
 - Release clause: none.
 - Game recommended wage: **€61k/week**.
 - Agent opening demand: **€52k/week + €470k signing bonus + €250k after 5 appearances**.
-- Wolves counter: **€48k/week + €130k signing bonus, no appearance bonus**.
+- Wolves first counter: **€48k/week + €130k signing bonus, no appearance bonus**.
 - Tension increase: ~15%.
 - Agent counter: **€52k/week + €155k signing bonus, no appearance bonus**.
+- Final Wolves agreement: **€49k/week + €100k signing bonus, no performance bonus**.
+- Final wage as % of game recommendation: ~80%.
+- Final wage was €3k/week below the agent's repeated €52k wage position.
 
-Observation: an aggressive cut of €590k from combined signing/appearance bonuses was largely accepted while the agent restored the wage to €52k. This strengthens the hypothesis that **base wage is the hard component and bonuses are soft components**. The first aggressive counter also removed the appearance bonus entirely for only modest tension.
+Observation: the first aggressive counter removed **€590k** of combined signing/appearance bonuses for only modest tension. More importantly, after the agent restored the wage to €52k, Wolves successfully pushed again to **€49k and reduced the signing bonus to €100k**. This shows that an agent counter is not necessarily a floor even for the base wage. When tension is still low, continue negotiating rather than treating the countered wage as fixed.
 
 ## Transfer-fee examples
 
@@ -104,7 +107,7 @@ Future contract-negotiation logic should model these separately:
 Initial empirical wage anchors from these examples:
 
 - ~39% of recommended wage: catastrophic lowball observed.
-- ~83% of recommended wage: successful Drommel deal.
-- Agent-stated wage can remain sticky while bonus demands collapse by >70%.
+- ~80–83% of recommended wage: successful free-agent deals observed.
+- Agent-stated wage can remain sticky initially while bonus demands collapse by >70%, but a further low-tension counter can still push the wage below the agent's repeated demand.
 
 Do not treat these percentages as fixed rules yet; more observations are needed.
